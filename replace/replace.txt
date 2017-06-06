@@ -1,0 +1,9 @@
+{
+replace this text
+replace also this text
+}
+/|/
+<
+this text was replaced
+This text was also replaced
+>
