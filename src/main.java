@@ -17,6 +17,13 @@ public class main {
         Path newFramework = Paths.get("newFramework");
         Path ignoreFile = Paths.get("ignore");
         Path replaceTemplates = Paths.get("replace");
+        if(outputFile.toFile().exists()) {
+            Files.walk(outputFile, FileVisitOption.FOLLOW_LINKS)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        }
+        Files.createDirectory(outputFile);
 
 
 
@@ -32,6 +39,7 @@ public class main {
                         BufferedWriter logOut = new BufferedWriter(new FileWriter(new File(logFile), false));
                         ProcessBuilder pb = new ProcessBuilder(cmd);
                         pb.inheritIO();
+                        pb.redirectOutput(ProcessBuilder.Redirect.to(new File( outputFile.toAbsolutePath().toString() + "\\" + pbo.getFileName().toString().replace(".pbo", ".PbLog"))));
                         p = pb.start();
                         p.waitFor();
                         Path primary = Paths.get(tempFolder);
@@ -72,18 +80,25 @@ public class main {
                                     StringJoiner replaceLinesBunched = new StringJoiner("\r\n");
                                     replaceLines.forEach(replaceLinesBunched::add);
                                     String joined = replaceLinesBunched.toString();
-                                    String[] pieces = joined.split("\\/\\|\\/");
+                                    String[] pieces = joined.split("(?=\\|\\d+\\|)");
                                     List<String> toBeReplaceLines = Files.readAllLines(Paths.get(tempFolder).resolve(shortened));
                                     StringJoiner toBeReplaceLinesBunched = new StringJoiner("\r\n");
                                     toBeReplaceLines.forEach(toBeReplaceLinesBunched::add);
                                     String toBeReplacedJoined = toBeReplaceLinesBunched.toString();
                                     for(int i = 0; i < pieces.length; i = i + 2) {
-                                        String pieceNum = pieces[i].substring(0, pieces[i].indexOf("|"));
-                                        pieces[i] = pieces[i].substring(pieces[i].indexOf("|")+1);
+                                        String pieceNum = pieces[i].substring(1, pieces[i].indexOf("|", 1));
+                                        pieces[i] = pieces[i].substring(pieces[i].indexOf("|", 1)+1);
+
+                                        String replacePieceNum = pieces[i+1].substring(1, pieces[i+1].indexOf("|", 1));
+                                        pieces[i+1] = pieces[i+1].substring(pieces[i+1].indexOf("|", 1)+1);
+
+                                        if(!pieceNum.equals(replacePieceNum)) {
+                                            logOut.write("\nWARNING ReplaceNum: " + pieceNum + " had matching replace piece num" + replacePieceNum);
+                                        }
                                         String toBeReplacedJoinedPre = toBeReplacedJoined;
                                         toBeReplacedJoined = toBeReplacedJoined.replace(pieces[i], pieces[i+1]);
                                         if(!toBeReplacedJoinedPre.equals(toBeReplacedJoined)) {
-                                            logOut.write("\nReplaceNum: " + pieceNum + " was used");
+                                            logOut.write("\nFile:" + shortened + " ReplaceNum: " + pieceNum + " was used");
                                         }
                                     }
                                     Files.write(Paths.get(tempFolder).resolve(shortened), Arrays.asList(toBeReplacedJoined), StandardOpenOption.TRUNCATE_EXISTING);
@@ -99,6 +114,7 @@ public class main {
                         pb.inheritIO();
                         p = pb.start();
 
+                        logOut.close();
 
                     } catch (IOException | InterruptedException e) {
                         e.printStackTrace();
@@ -110,11 +126,6 @@ public class main {
     }
 
     private static Stream<Path> getChildren(Path root) throws IOException {
-        return Files.find(root, 300, new BiPredicate<Path, BasicFileAttributes>() {
-            @Override
-            public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
-                return true;
-            }
-        }, FileVisitOption.FOLLOW_LINKS);
+        return Files.find(root, 300, (path, basicFileAttributes) -> true, FileVisitOption.FOLLOW_LINKS);
     }
 }
