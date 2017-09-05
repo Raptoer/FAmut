@@ -26,29 +26,23 @@ public class main {
                 pbo -> {
                     String tempFolder = outputFile.toAbsolutePath().toString() + "\\" + pbo.getFileName().toString().replace(".pbo", "");
                     String logFile = outputFile.toAbsolutePath().toString() + "\\" + pbo.getFileName().toString().replace(".pbo", ".log");
-                    BufferedWriter logOut = null;
-                    try {
-                        logOut = new BufferedWriter(new FileWriter(new File(logFile)));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                     String[] cmd = { "C:\\apps\\PBO Manager v.1.4 beta\\PBOConsole.exe", "-unpack", pbo.toString(), tempFolder};
                     Process p = null;
                     try {
+                        BufferedWriter logOut = new BufferedWriter(new FileWriter(new File(logFile), false));
                         ProcessBuilder pb = new ProcessBuilder(cmd);
                         pb.inheritIO();
                         p = pb.start();
                         p.waitFor();
                         Path primary = Paths.get(tempFolder);
                         Stream<Path> existingFiles = getChildren(primary);
-                        BufferedWriter finalLogOut = logOut;
                         existingFiles.sorted(Comparator.comparing(Path::getNameCount).reversed()).filter(e -> !e.equals(primary)).forEach(existingFile -> {
                             try {
                                 Path shortened = primary.relativize(existingFile);
                                 if(Files.exists(oldFramework.resolve(shortened))
                                         && !Files.exists(ignoreFile.resolve(shortened))) {
                                     Files.delete(Paths.get(tempFolder + "\\" + shortened.toString()));
-                                    finalLogOut.write("\ndeleting: " + shortened);
+                                    logOut.write("\ndeleting: " + shortened);
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -60,7 +54,7 @@ public class main {
                                 Path shortened = newFramework.relativize(newFile);
                                 if(!Files.exists(ignoreFile.resolve(shortened))) {
                                     Files.copy(newFile, Paths.get(tempFolder + "\\" + shortened.toString()));
-                                    finalLogOut.write("\ncopying: " + shortened);
+                                    logOut.write("\ncopying: " + shortened);
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -89,7 +83,7 @@ public class main {
                                         String toBeReplacedJoinedPre = toBeReplacedJoined;
                                         toBeReplacedJoined = toBeReplacedJoined.replace(pieces[i], pieces[i+1]);
                                         if(!toBeReplacedJoinedPre.equals(toBeReplacedJoined)) {
-                                            finalLogOut.write("\nReplaceNum: " + pieceNum + " was used");
+                                            logOut.write("\nReplaceNum: " + pieceNum + " was used");
                                         }
                                     }
                                     Files.write(Paths.get(tempFolder).resolve(shortened), Arrays.asList(toBeReplacedJoined), StandardOpenOption.TRUNCATE_EXISTING);
