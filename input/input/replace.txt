@@ -1,9 +1,0 @@
-don't replace this text
-}
-
-{
-replace this text
-replace also this text
-}
-
-don't replace this text
