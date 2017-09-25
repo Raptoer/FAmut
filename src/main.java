@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 public class main {
     public static void main(String[] args) throws IOException {
         Path inputFile = Paths.get("input");
-        Path outputFile = Paths.get("output");
+        Path outputFile = Paths.get("C:\\Users\\Pooter\\Documents\\Arma 3\\missions");
         Path oldFramework = Paths.get("oldFramework");
         Path newFramework = Paths.get("newFramework");
         Path ignoreFile = Paths.get("ignore");
@@ -49,8 +49,10 @@ public class main {
                                 Path shortened = primary.relativize(existingFile);
                                 if(Files.exists(oldFramework.resolve(shortened))
                                         && !Files.exists(ignoreFile.resolve(shortened))) {
-                                    Files.delete(Paths.get(tempFolder + "\\" + shortened.toString()));
-                                    logOut.write("\ndeleting: " + shortened);
+                                    if(!Paths.get(tempFolder + "\\" + shortened.toString()).toFile().isDirectory()) {
+                                        Files.delete(Paths.get(tempFolder + "\\" + shortened.toString()));
+                                        logOut.write("\ndeleting: " + shortened);
+                                    }
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -60,7 +62,8 @@ public class main {
                         newFiles.filter(e -> !e.equals(newFramework)).forEach( newFile -> {
                             try {
                                 Path shortened = newFramework.relativize(newFile);
-                                if(!Files.exists(ignoreFile.resolve(shortened))) {
+                                if(!Files.exists(ignoreFile.resolve(shortened))
+                                        && !Files.exists(Paths.get(tempFolder + "\\" + shortened.toString()))) {
                                     Files.copy(newFile, Paths.get(tempFolder + "\\" + shortened.toString()));
                                     logOut.write("\ncopying: " + shortened);
                                 }
